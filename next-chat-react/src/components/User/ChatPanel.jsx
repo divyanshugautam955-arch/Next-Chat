@@ -216,7 +216,9 @@ const ChatPanel = () => {
                 attachment: attachmentUrl,
                 chatId: selectedChat._id
             });
-            socket.emit("new message", data);
+            if (socketRef.current) {
+                socketRef.current.emit("new message", data);
+            }
             setMessages((prev) => [...prev, data]);
         } catch (error) {
             toast.error("Failed to send attachment");
@@ -352,7 +354,7 @@ const ChatPanel = () => {
         <div className="panel active">
             <CallOverlay
                 call={activeCall}
-                socket={socket}
+                socket={socketRef.current}
                 selfId={userInfo?._id}
                 selfName={userInfo?.name}
                 onAccept={handleAcceptCall}

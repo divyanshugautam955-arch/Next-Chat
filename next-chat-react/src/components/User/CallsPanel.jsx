@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
 import io from 'socket.io-client';
@@ -7,7 +7,6 @@ import CallOverlay from './CallOverlay';
 import { getSocketUrl } from '../../config/runtime';
 
 const ENDPOINT = getSocketUrl();
-let socket;
 
 const CallsPanel = () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo')) || {};
@@ -191,7 +190,7 @@ const CallsPanel = () => {
         <div className="panel active">
             <CallOverlay
                 call={activeCall}
-                socket={socket}
+                socket={socketRef.current}
                 selfId={userInfo?._id}
                 selfName={userInfo?.name}
                 onAccept={handleAcceptCall}
