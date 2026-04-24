@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-const SharedHeader = ({ title, sub, type, onToggleNotif, onCloseNotif, onClearNotif, notifOpen, notifications = [], unreadCount = 0 }) => {
+const SharedHeader = ({ title, sub, type, onToggleNotif, onCloseNotif, onClearNotif, onToggleSidebar, notifOpen, notifications = [], unreadCount = 0 }) => {
     const [accountOpen, setAccountOpen] = React.useState(false);
     const panelRef = useRef(null);
     const accountRef = useRef(null);
@@ -33,6 +33,9 @@ const SharedHeader = ({ title, sub, type, onToggleNotif, onCloseNotif, onClearNo
 
     return (
         <div className="nc-header d-flex align-items-center gap-3">
+            <button className="icon-btn d-lg-none" onClick={onToggleSidebar}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
             <div>
                 <div className="header-title">{title}</div>
                 <div className="header-sub">{sub}</div>

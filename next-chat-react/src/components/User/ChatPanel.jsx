@@ -141,6 +141,10 @@ const ChatPanel = () => {
         setActiveCall(prev => ({ ...prev, status: 'connected' }));
     };
 
+    const handleSelectChat = (chat) => {
+        setSelectedChat(chat);
+    };
+
     const handleDeclineCall = () => {
         if (socketRef.current) {
             socketRef.current.emit("decline call", { to: activeCall.peerId });
@@ -373,7 +377,7 @@ const ChatPanel = () => {
             />
             <div className="d-flex" style={{ height: 'calc(100vh - 45px - 60px)', overflow: 'hidden' }}>
                 {/* Conversation List */}
-                <div className="chat-sidebar-panel">
+                <div className={`chat-sidebar-panel ${selectedChat ? 'hidden' : ''}`}>
                     <div className="p-2 border-bottom">
                         <div className="search-wrap d-flex align-items-center gap-2">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
@@ -409,7 +413,7 @@ const ChatPanel = () => {
                             return (
                                 <div key={chat._id} 
                                      className={`conv-item ${selectedChat?._id === chat._id ? 'active' : ''}`}
-                                     onClick={() => setSelectedChat(chat)}>
+                                     onClick={() => handleSelectChat(chat)}>
                                     <div className="d-flex align-items-center gap-3">
                                         <div className="position-relative">
                                             <span className={`avatar sm ${avatarColor}`}>
@@ -437,10 +441,13 @@ const ChatPanel = () => {
                 </div>
 
                 {/* Chat Main Window */}
-                <div className="chat-main-panel flex-grow-1 d-flex flex-column" style={{ background: 'var(--nc-gray-50)' }}>
+                <div className={`chat-main-panel flex-grow-1 d-flex flex-column ${selectedChat ? 'active' : ''}`} style={{ background: 'var(--nc-gray-50)' }}>
                     {selectedChat ? (
                         <>
                             <div className="chat-topbar d-flex align-items-center gap-2">
+                                <button className="icon-btn mobile-back-btn me-2" onClick={() => setSelectedChat(null)}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                                </button>
                                 <span className={`avatar sm ${selectedChat.color || getAvatarColor(getChatName(selectedChat), selectedChat.isGroupChat)}`}>
                                     {selectedChat.isGroupChat ? "#" : getChatName(selectedChat).charAt(0).toUpperCase()}
                                 </span>

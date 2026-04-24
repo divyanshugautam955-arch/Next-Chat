@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const UserSidebar = () => {
+const UserSidebar = ({ className = "" }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -15,7 +15,7 @@ const UserSidebar = () => {
     const isActive = (path) => location.pathname === path ? 'active' : '';
 
     return (
-        <div className="nc-sidebar">
+        <div className={`nc-sidebar ${className}`}>
             <div className="sidebar-logo d-flex align-items-center gap-2">
                 <span className="logo-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="none" stroke="#fff" strokeWidth="2" /></svg></span>
                 <span style={{ color: '#fff', fontWeight: 600, fontSize: '15px' }}>NexChat</span>

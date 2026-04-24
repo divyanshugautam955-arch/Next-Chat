@@ -28,6 +28,7 @@ function App() {
   const location = useLocation();
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState(() => loadNotifications());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isAdminZone = location.pathname.startsWith('/admin') && !['/admin/login', '/adminlogin'].includes(location.pathname);
   const isUserZone = location.pathname.startsWith('/user') && location.pathname !== '/user/login';
@@ -53,6 +54,7 @@ function App() {
   useEffect(() => {
     // Close panel on navigation to avoid “stuck open”
     setNotifOpen(false);
+    setSidebarOpen(false);
   }, [location.pathname]);
 
   const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
@@ -88,8 +90,10 @@ function App() {
       {isGeneralZone && <Navbar />}
 
       <div className={isAdminZone || isUserZone ? 'd-flex' : ''}>
-        {isAdminZone && <AdminSidebar />}
-        {isUserZone && <UserSidebar />}
+        <div className={`sidebar-overlay ${sidebarOpen ? 'show' : ''}`} onClick={() => setSidebarOpen(false)}></div>
+        
+        {isAdminZone && <AdminSidebar className={sidebarOpen ? 'open' : ''} />}
+        {isUserZone && <UserSidebar className={sidebarOpen ? 'open' : ''} />}
 
         <div className={(isAdminZone || isUserZone) ? 'nc-main flex-grow-1' : ''}>
           {(isAdminZone || isUserZone) && headerInfo && (
@@ -100,6 +104,7 @@ function App() {
               onToggleNotif={toggleNotif}
               onCloseNotif={closeNotif}
               onClearNotif={() => { clearNotifications(); setNotifOpen(false); }}
+              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
               notifOpen={notifOpen}
               notifications={notifications}
               unreadCount={unreadCount}
