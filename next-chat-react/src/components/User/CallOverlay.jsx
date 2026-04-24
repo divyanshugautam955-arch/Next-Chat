@@ -3,7 +3,20 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 const DEFAULT_RTC_CONFIG = {
     iceServers: [
         { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+        // Use environment variables for TURN credentials
+        {
+            urls: import.meta.env.VITE_TURN_URL || 'turn:global.relay.metered.ca:80',
+            username: import.meta.env.VITE_TURN_USERNAME || '',
+            credential: import.meta.env.VITE_TURN_PASSWORD || ''
+        },
+        // Optional: TCP variant for better firewall traversal
+        {
+            urls: (import.meta.env.VITE_TURN_URL || 'turn:global.relay.metered.ca:80') + '?transport=tcp',
+            username: import.meta.env.VITE_TURN_USERNAME || '',
+            credential: import.meta.env.VITE_TURN_PASSWORD || ''
+        }
     ],
+    iceCandidatePoolSize: 10,
 };
 
 const CallOverlay = ({ call, socket, selfId, selfName, onAccept, onDecline, onEnd, onClose }) => {
@@ -22,6 +35,7 @@ const CallOverlay = ({ call, socket, selfId, selfName, onAccept, onDecline, onEn
     const startedOutgoingRef = useRef(false);
     const answeredIncomingRef = useRef(false);
     const appliedAnswerRef = useRef(false);
+    const iceCandidateQueue = useRef([]);
 
     const cleanup = () => {
         startedOutgoingRef.current = false;
@@ -83,16 +97,18 @@ const CallOverlay = ({ call, socket, selfId, selfName, onAccept, onDecline, onEn
         };
 
         pc.ontrack = (event) => {
+            console.log("Received remote track:", event.track.kind);
             if (!remoteStreamRef.current) {
                 remoteStreamRef.current = new MediaStream();
             }
             remoteStreamRef.current.addTrack(event.track);
+            
+            // Re-assign srcObject to ensure the video/audio elements see the new track
             if (isVideo && remoteVideoRef.current) {
                 remoteVideoRef.current.srcObject = remoteStreamRef.current;
             }
             if (!isVideo && remoteAudioRef.current) {
                 remoteAudioRef.current.srcObject = remoteStreamRef.current;
-                // Some browsers require an explicit play() call
                 remoteAudioRef.current.play?.().catch(() => {});
             }
         };
@@ -122,6 +138,19 @@ const CallOverlay = ({ call, socket, selfId, selfName, onAccept, onDecline, onEn
             if (!existing.includes(track)) pc.addTrack(track, stream);
         });
         return { pc, stream };
+    };
+
+    const processQueuedCandidates = async () => {
+        const pc = pcRef.current;
+        if (!pc || !pc.remoteDescription) return;
+        while (iceCandidateQueue.current.length > 0) {
+            const candidate = iceCandidateQueue.current.shift();
+            try {
+                await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (e) {
+                console.error("Error adding queued candidate", e);
+            }
+        }
     };
 
     const startOutgoing = async () => {
@@ -158,6 +187,7 @@ const CallOverlay = ({ call, socket, selfId, selfName, onAccept, onDecline, onEn
 
         socket.emit('answer call', { to: call.peerId, from: selfId, signal: { sdp: pc.localDescription } });
         answeredIncomingRef.current = true;
+        await processQueuedCandidates();
     };
 
     const applyAcceptedAnswer = async () => {
@@ -175,6 +205,7 @@ const CallOverlay = ({ call, socket, selfId, selfName, onAccept, onDecline, onEn
 
         await pc.setRemoteDescription(new RTCSessionDescription(answerSdp));
         appliedAnswerRef.current = true;
+        await processQueuedCandidates();
     };
 
     // Create/tear down the call resources once per session
@@ -189,11 +220,17 @@ const CallOverlay = ({ call, socket, selfId, selfName, onAccept, onDecline, onEn
                 if (!data?.candidate) return;
                 if (!call?.peerId) return;
                 if (data.from && data.from !== call.peerId) return;
+                
                 const pc = ensurePeerConnection();
                 if (pc.signalingState === 'closed') return;
-                await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+
+                if (pc.remoteDescription && pc.remoteDescription.type) {
+                    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                } else {
+                    iceCandidateQueue.current.push(data.candidate);
+                }
             } catch (err) {
-                // ignore candidate errors
+                console.error("Error adding ice candidate:", err);
             }
         };
 
