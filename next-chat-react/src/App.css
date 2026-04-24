@@ -787,6 +787,8 @@ body {
 }
 .chat-main-panel {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   overflow: hidden;
   background: var(--nc-gray-50);
@@ -801,7 +803,7 @@ body {
 .chat-messages {
   padding: 18px;
   overflow-y: auto;
-  height: calc(100% - 110px);
+  flex: 1;
 }
 .msg-date-sep {
   text-align: center;
@@ -828,13 +830,14 @@ body {
   padding: 12px 16px;
   background: #fff;
   border-top: 1px solid var(--nc-gray-200);
+  flex-shrink: 0;
 }
 .chat-input-wrap {
   background: var(--nc-gray-100);
   border-radius: 22px;
-  padding: 8px 14px;
+  padding: 6px 14px;
 }
-.chat-input-wrap input { border: none; background: transparent; outline: none; font-size: 13.5px; color: var(--nc-gray-700); width: 100%; }
+.chat-input-wrap input { border: none; background: transparent; outline: none; font-size: 14px; color: var(--nc-gray-700); width: 100%; height: 32px; }
 .send-btn {
   width: 38px;
   height: 38px;
@@ -941,12 +944,8 @@ body {
   }
   .chat-main-panel.active {
     display: flex;
-    position: fixed;
-    top: 105px; /* Adjust based on dev-topbar + nc-header height */
-    left: 0;
     width: 100%;
-    height: calc(100vh - 105px);
-    z-index: 1040;
+    height: 100%;
   }
   .chat-sidebar-panel.hidden {
     display: none;

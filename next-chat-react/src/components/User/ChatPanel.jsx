@@ -375,7 +375,7 @@ const ChatPanel = () => {
                 onEnd={handleEndCall}
                 onClose={() => setActiveCall(null)}
             />
-            <div className="d-flex" style={{ height: 'calc(100vh - 45px - 60px)', overflow: 'hidden' }}>
+            <div className="d-flex chat-shell-wrap">
                 {/* Conversation List */}
                 <div className={`chat-sidebar-panel ${selectedChat ? 'hidden' : ''}`}>
                     <div className="p-2 border-bottom">
