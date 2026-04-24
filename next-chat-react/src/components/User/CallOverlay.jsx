@@ -1,19 +1,27 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
+const sanitizeUrl = (url) => {
+    if (!url) return "";
+    // Remove all types of quotes and whitespace that might be accidentally included from .env
+    return url.replace(/['"]/g, "").trim();
+};
+
+const getTurnUrl = () => sanitizeUrl(import.meta.env.VITE_TURN_URL) || 'turn:global.relay.metered.ca:80';
+
 const DEFAULT_RTC_CONFIG = {
     iceServers: [
         { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
         // Use environment variables for TURN credentials
         {
-            urls: import.meta.env.VITE_TURN_URL || 'turn:global.relay.metered.ca:80',
-            username: import.meta.env.VITE_TURN_USERNAME || '',
-            credential: import.meta.env.VITE_TURN_PASSWORD || ''
+            urls: getTurnUrl(),
+            username: sanitizeUrl(import.meta.env.VITE_TURN_USERNAME),
+            credential: sanitizeUrl(import.meta.env.VITE_TURN_PASSWORD)
         },
         // Optional: TCP variant for better firewall traversal
         {
-            urls: (import.meta.env.VITE_TURN_URL || 'turn:global.relay.metered.ca:80') + '?transport=tcp',
-            username: import.meta.env.VITE_TURN_USERNAME || '',
-            credential: import.meta.env.VITE_TURN_PASSWORD || ''
+            urls: getTurnUrl() + '?transport=tcp',
+            username: sanitizeUrl(import.meta.env.VITE_TURN_USERNAME),
+            credential: sanitizeUrl(import.meta.env.VITE_TURN_PASSWORD)
         }
     ],
     iceCandidatePoolSize: 10,
