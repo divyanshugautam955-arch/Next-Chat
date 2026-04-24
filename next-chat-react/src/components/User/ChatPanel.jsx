@@ -314,9 +314,18 @@ const ChatPanel = () => {
     };
 
     const isChatOnline = (chat) => {
-        if (!chat || chat.isGroupChat) return false;
-        const other = chat.users.find(u => u._id !== userInfo._id);
+        if (!chat) return false;
+        if (chat.isGroupChat) {
+            // For group chats, return true if ANY member (besides current user) is online
+            return (chat.users || []).some(u => u._id !== userInfo?._id && onlineUsers.includes(u._id));
+        }
+        const other = (chat.users || []).find(u => u._id !== userInfo?._id);
         return other ? onlineUsers.includes(other._id) : false;
+    };
+
+    const getOnlineCount = (chat) => {
+        if (!chat || !chat.isGroupChat) return 0;
+        return (chat.users || []).filter(u => u._id !== userInfo?._id && onlineUsers.includes(u._id)).length;
     };
 
     const handleCall = async (type) => {
@@ -437,7 +446,11 @@ const ChatPanel = () => {
                                 </span>
                                 <div className="flex-grow-1">
                                     <div className="chat-user-name">{getChatName(selectedChat)}</div>
-                                    <div className="chat-user-status" style={{ color: isChatOnline(selectedChat) ? 'var(--nc-green)' : 'var(--nc-gray-400)' }}>● {selectedChat.isGroupChat ? `${selectedChat.users.length} members` : (isChatOnline(selectedChat) ? "Online" : "Offline")}</div>
+                                    <div className="chat-user-status" style={{ color: isChatOnline(selectedChat) ? 'var(--nc-green)' : 'var(--nc-gray-400)' }}>
+                                        ● {selectedChat.isGroupChat 
+                                            ? `${selectedChat.users.length} members${getOnlineCount(selectedChat) > 0 ? ` (${getOnlineCount(selectedChat)} online)` : ""}` 
+                                            : (isChatOnline(selectedChat) ? "Online" : "Offline")}
+                                    </div>
                                 </div>
                                 <div className="d-flex gap-1">
                                     <button className="icon-btn" title="Voice Call" onClick={() => handleCall('audio')}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.16 6.16l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" /></svg></button>
@@ -569,15 +582,26 @@ const ChatPanel = () => {
                         <div className="info-section">
                             <div className="info-section-title">Participants</div>
                             <div className="participants-list">
-                                {selectedChat.users.map(u => (
-                                    <div key={u._id} className="d-flex align-items-center gap-2 mb-2 p-1 rounded hover-effect">
-                                        <span className={`avatar sm ${getAvatarColor(u.name)}`}>{u.name?.[0] || 'U'}</span>
-                                        <div className="flex-grow-1 overflow-hidden">
-                                            <div className="small fw-medium text-dark text-truncate">{u.name}</div>
-                                            <div className="small text-muted" style={{fontSize: '9px'}}>{u._id === selectedChat.groupAdmin?._id ? 'Group Admin' : 'Member'}</div>
+                                {selectedChat.users.map(u => {
+                                    const isUserOnline = u._id !== userInfo?._id && onlineUsers.includes(u._id);
+                                    return (
+                                        <div key={u._id} className="d-flex align-items-center gap-2 mb-2 p-1 rounded hover-effect">
+                                            <div className="position-relative">
+                                                <span className={`avatar sm ${getAvatarColor(u.name)}`}>{u.name?.[0] || 'U'}</span>
+                                                {u._id !== userInfo?._id && (
+                                                    <span className={`status-indicator sm ${isUserOnline ? 'online' : 'offline'}`} style={{ border: '2px solid #fff' }}></span>
+                                                )}
+                                            </div>
+                                            <div className="flex-grow-1 overflow-hidden">
+                                                <div className="small fw-medium text-dark text-truncate">{u.name}</div>
+                                                <div className="small text-muted" style={{fontSize: '9px'}}>
+                                                    {u._id === selectedChat.groupAdmin?._id ? 'Group Admin' : 'Member'}
+                                                    {isUserOnline && <span className="ms-1 text-success">• Online</span>}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
 

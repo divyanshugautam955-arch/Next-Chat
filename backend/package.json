@@ -4,7 +4,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "npx nodemon src/server.js",
+    "dev": "nodemon src/server.js",
     "create:admin": "node src/scripts/createAdmin.js"
   },
   "keywords": [],
@@ -13,7 +13,6 @@
   "description": "",
   "dependencies": {
     "bcryptjs": "^3.0.3",
-    "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.0",
     "express": "^5.2.1",
@@ -21,5 +20,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.4.1",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }

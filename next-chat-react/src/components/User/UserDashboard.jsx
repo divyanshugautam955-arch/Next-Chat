@@ -180,6 +180,7 @@ const UserDashboard = () => {
                                     const subtitle = getChatSubtitle(chat);
                                     const avatarText = chat.isGroupChat ? "#" : (title?.[0]?.toUpperCase() || "U");
                                     const avatarColor = getAvatarColor(title);
+                                    const isAnyOnline = chat.isGroupChat && (chat.users || []).some(u => u._id !== userInfo?._id && onlineUsers.includes(u._id));
                                     return (
                                         <div
                                             key={chat._id}
@@ -188,7 +189,7 @@ const UserDashboard = () => {
                                             title={subtitle}
                                         >
                                             <span className={`avatar sm ${avatarColor}`}>{avatarText}</span>
-                                            <span className={`online-dot ${chat.isGroupChat ? 'away' : ''}`}></span>
+                                            <span className={`online-dot ${chat.isGroupChat ? (isAnyOnline ? 'online' : 'away') : ''}`}></span>
                                             <span className="online-name flex-grow-1 text-truncate" style={{ maxWidth: '190px' }}>
                                                 {title}
                                             </span>
