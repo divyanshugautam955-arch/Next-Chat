@@ -7,6 +7,7 @@ import CallOverlay from './CallOverlay';
 import { pushNotification } from '../../utils/notifications';
 import { getApiOrigin, getSocketUrl } from '../../config/runtime';
 import EmojiPicker from 'emoji-picker-react';
+import { useSocket } from '../../context/SocketContext';
 
 const ENDPOINT = getApiOrigin();
 const SOCKET_ENDPOINT = getSocketUrl();
@@ -48,58 +49,28 @@ const ChatPanel = () => {
         return colors[charCode];
     };
 
+    const { socket, onlineUsers: globalOnlineUsers } = useSocket();
     const socketRef = useRef(null);
     const selectedChatCompareRef = useRef(null);
 
     useEffect(() => {
-        if (!userInfo?._id) return;
-
-        console.log("Initializing socket connection to:", SOCKET_ENDPOINT);
-        const socket = io(SOCKET_ENDPOINT, {
-            transports: ["websocket", "polling"],
-            reconnectionAttempts: 5,
-        });
-        
         socketRef.current = socket;
-        socketInstance = socket; // for legacy access if any
+    }, [socket]);
 
-        socket.on("connect", () => {
-            console.log("Socket connected successfully:", socket.id);
-            setSocketConnected(true);
-            socket.emit("setup", userInfo);
-        });
+    useEffect(() => {
+        setOnlineUsers(globalOnlineUsers);
+    }, [globalOnlineUsers]);
 
-        socket.on("connect_error", (err) => {
-            console.error("Socket connection error:", err.message);
-            setSocketConnected(false);
-        });
-
-        socket.on("online users", (users) => {
-            console.log("Online users updated:", users);
-            setOnlineUsers(users);
-        });
-
-        const messageHandler = (newMessageRecieved) => {
-            console.log("Message received:", newMessageRecieved);
+    useEffect(() => {
+        const messageHandler = (e) => {
+            const newMessageRecieved = e.detail;
+            console.log("ChatPanel caught message:", newMessageRecieved);
             const currentChat = selectedChatCompareRef.current;
             
-            if (!currentChat || currentChat._id !== newMessageRecieved.chat._id) {
-                // Give notification
-                const senderName = newMessageRecieved.sender?.name || "User";
-                toast.success(`New message from ${senderName}`);
-                pushNotification({
-                    id: `${newMessageRecieved._id || Date.now()}`,
-                    type: "message",
-                    text: `${senderName} sent you a message`,
-                    createdAt: newMessageRecieved.createdAt || new Date().toISOString(),
-                    read: false,
-                    initials: senderName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
-                    color: "purple",
-                    chatId: newMessageRecieved.chat?._id,
-                });
-                fetchChats();
-            } else {
+            if (currentChat && currentChat._id === newMessageRecieved.chat._id) {
                 setMessages((prevMessages) => [...prevMessages, newMessageRecieved]);
+            } else {
+                fetchChats();
             }
         };
 
@@ -118,23 +89,25 @@ const ChatPanel = () => {
         const callDeclinedHandler = () => { setActiveCall(null); toast.error('Call declined'); };
         const callEndedHandler = () => { setActiveCall(null); toast('Call ended'); };
 
-        socket.on("message recieved", messageHandler);
-        socket.on("call user", incomingCallHandler);
-        socket.on("call accepted", callAcceptedHandler);
-        socket.on("call declined", callDeclinedHandler);
-        socket.on("call ended", callEndedHandler);
+        window.addEventListener("nc:message_received", messageHandler);
+        
+        if (socket) {
+            socket.on("call user", incomingCallHandler);
+            socket.on("call accepted", callAcceptedHandler);
+            socket.on("call declined", callDeclinedHandler);
+            socket.on("call ended", callEndedHandler);
+        }
 
         return () => {
-            console.log("Cleaning up socket connection");
-            socket.off("message recieved", messageHandler);
-            socket.off("call user", incomingCallHandler);
-            socket.off("call accepted", callAcceptedHandler);
-            socket.off("call declined", callDeclinedHandler);
-            socket.off("call ended", callEndedHandler);
-            socket.disconnect();
-            socketRef.current = null;
+            window.removeEventListener("nc:message_received", messageHandler);
+            if (socket) {
+                socket.off("call user", incomingCallHandler);
+                socket.off("call accepted", callAcceptedHandler);
+                socket.off("call declined", callDeclinedHandler);
+                socket.off("call ended", callEndedHandler);
+            }
         };
-    }, []);
+    }, [socket]);
 
     const handleAcceptCall = () => {
         // WebRTC answer is generated inside CallOverlay (after media permission)

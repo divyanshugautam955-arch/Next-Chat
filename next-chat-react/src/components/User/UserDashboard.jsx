@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import { getSocketUrl } from '../../config/runtime';
+import { useSocket } from '../../context/SocketContext';
 
 const SOCKET_ENDPOINT = getSocketUrl();
 
@@ -22,33 +23,16 @@ const UserDashboard = () => {
     const [chats, setChats] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState([]);
 
+    const { socket, onlineUsers: globalOnlineUsers } = useSocket();
     const socketRef = useRef(null);
 
     useEffect(() => {
-        if (!userInfo?._id) return;
-        
-        console.log("Dashboard initializing socket...");
-        const socket = io(SOCKET_ENDPOINT, {
-            transports: ["websocket", "polling"],
-        });
         socketRef.current = socket;
+    }, [socket]);
 
-        socket.on("connect", () => {
-            console.log("Dashboard socket connected:", socket.id);
-            socket.emit("setup", userInfo);
-        });
-
-        socket.on("online users", (users) => {
-            console.log("Dashboard online users received:", users);
-            setOnlineUsers(users);
-        });
-
-        return () => {
-            console.log("Dashboard cleaning up socket");
-            socket.disconnect();
-            socketRef.current = null;
-        };
-    }, []);
+    useEffect(() => {
+        setOnlineUsers(globalOnlineUsers);
+    }, [globalOnlineUsers]);
 
     const fetchStats = async () => {
         try {

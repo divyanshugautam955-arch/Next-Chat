@@ -23,6 +23,7 @@ import UserDashboard from './components/User/UserDashboard';
 import UserLogin from './components/User/UserLogin';
 import ProtectedRoute from './components/ProtectedRoute';
 import { clearNotifications, loadNotifications, saveNotifications } from './utils/notifications';
+import { SocketProvider } from './context/SocketContext';
 
 function App() {
   const location = useLocation();
@@ -86,60 +87,62 @@ function App() {
   const headerInfo = getHeaderInfo();
 
   return (
-    <div className="nc-app">
-      {isGeneralZone && <Navbar />}
+    <SocketProvider>
+      <div className="nc-app">
+        {isGeneralZone && <Navbar />}
 
-      <div className={isAdminZone || isUserZone ? 'd-flex' : ''}>
-        <div className={`sidebar-overlay ${sidebarOpen ? 'show' : ''}`} onClick={() => setSidebarOpen(false)}></div>
-        
-        {isAdminZone && <AdminSidebar className={sidebarOpen ? 'open' : ''} />}
-        {isUserZone && <UserSidebar className={sidebarOpen ? 'open' : ''} />}
+        <div className={isAdminZone || isUserZone ? 'd-flex' : ''}>
+          <div className={`sidebar-overlay ${sidebarOpen ? 'show' : ''}`} onClick={() => setSidebarOpen(false)}></div>
+          
+          {isAdminZone && <AdminSidebar className={sidebarOpen ? 'open' : ''} />}
+          {isUserZone && <UserSidebar className={sidebarOpen ? 'open' : ''} />}
 
-        <div className={(isAdminZone || isUserZone) ? 'nc-main flex-grow-1' : ''}>
-          {(isAdminZone || isUserZone) && headerInfo && (
-            <SharedHeader 
-              title={headerInfo.title} 
-              sub={headerInfo.sub} 
-              type={headerInfo.type} 
-              onToggleNotif={toggleNotif}
-              onCloseNotif={closeNotif}
-              onClearNotif={() => { clearNotifications(); setNotifOpen(false); }}
-              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-              notifOpen={notifOpen}
-              notifications={notifications}
-              unreadCount={unreadCount}
-            />
-          )}
+          <div className={(isAdminZone || isUserZone) ? 'nc-main flex-grow-1' : ''}>
+            {(isAdminZone || isUserZone) && headerInfo && (
+              <SharedHeader 
+                title={headerInfo.title} 
+                sub={headerInfo.sub} 
+                type={headerInfo.type} 
+                onToggleNotif={toggleNotif}
+                onCloseNotif={closeNotif}
+                onClearNotif={() => { clearNotifications(); setNotifOpen(false); }}
+                onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                notifOpen={notifOpen}
+                notifications={notifications}
+                unreadCount={unreadCount}
+              />
+            )}
 
-          <Routes>
-            {/* General Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/help" element={<Help />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Routes>
+              {/* General Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/help" element={<Help />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<ProtectedRoute isAdmin><AdminDashboard isShared /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute isAdmin><UserManagement isShared /></ProtectedRoute>} />
-            <Route path="/admin/groups" element={<ProtectedRoute isAdmin><AdminGroups isShared /></ProtectedRoute>} />
-            <Route path="/admin/rooms" element={<ProtectedRoute isAdmin><AdminRooms isShared /></ProtectedRoute>} />
-            <Route path="/admin/login" element={<AdminLogin isShared />} />
-            <Route path="/adminlogin" element={<AdminLogin isShared />} />
+              {/* Admin Routes */}
+              <Route path="/admin" element={<ProtectedRoute isAdmin><AdminDashboard isShared /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute isAdmin><UserManagement isShared /></ProtectedRoute>} />
+              <Route path="/admin/groups" element={<ProtectedRoute isAdmin><AdminGroups isShared /></ProtectedRoute>} />
+              <Route path="/admin/rooms" element={<ProtectedRoute isAdmin><AdminRooms isShared /></ProtectedRoute>} />
+              <Route path="/admin/login" element={<AdminLogin isShared />} />
+              <Route path="/adminlogin" element={<AdminLogin isShared />} />
 
-            {/* User Routes */}
-            <Route path="/user/dashboard" element={<ProtectedRoute><UserDashboard isShared /></ProtectedRoute>} />
-            <Route path="/user" element={<ProtectedRoute><ChatPanel isShared /></ProtectedRoute>} />
-            <Route path="/user/groups" element={<ProtectedRoute><GroupsPanel isShared /></ProtectedRoute>} />
-            <Route path="/user/calls" element={<ProtectedRoute><CallsPanel isShared /></ProtectedRoute>} />
-            <Route path="/user/login" element={<UserLogin isShared />} />
-          </Routes>
+              {/* User Routes */}
+              <Route path="/user/dashboard" element={<ProtectedRoute><UserDashboard isShared /></ProtectedRoute>} />
+              <Route path="/user" element={<ProtectedRoute><ChatPanel isShared /></ProtectedRoute>} />
+              <Route path="/user/groups" element={<ProtectedRoute><GroupsPanel isShared /></ProtectedRoute>} />
+              <Route path="/user/calls" element={<ProtectedRoute><CallsPanel isShared /></ProtectedRoute>} />
+              <Route path="/user/login" element={<UserLogin isShared />} />
+            </Routes>
+          </div>
         </div>
-      </div>
 
-      {isGeneralZone && <Footer />}
-    </div>
+        {isGeneralZone && <Footer />}
+      </div>
+    </SocketProvider>
   );
 }
 
