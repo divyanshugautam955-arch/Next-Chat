@@ -10,7 +10,9 @@ import EmojiPicker from 'emoji-picker-react';
 
 const ENDPOINT = getApiOrigin();
 const SOCKET_ENDPOINT = getSocketUrl();
-let socket, selectedChatCompare;
+// We use a module-level variable for the socket to allow it to persist 
+// somewhat between navigations if needed, but we'll manage it carefully.
+let socketInstance; 
 
 const ChatPanel = () => {
     const location = useLocation();
@@ -46,36 +48,42 @@ const ChatPanel = () => {
         return colors[charCode];
     };
 
+    const socketRef = useRef(null);
+    const selectedChatCompareRef = useRef(null);
+
     useEffect(() => {
-        // If session is missing/invalid, don't attempt socket setup
         if (!userInfo?._id) return;
 
-        socket = io(SOCKET_ENDPOINT);
-        socket.emit("setup", userInfo);
-        socket.on("connected", () => setSocketConnected(true));
-        socket.on("online users", (users) => {
-            setOnlineUsers(users);
+        console.log("Initializing socket connection to:", SOCKET_ENDPOINT);
+        const socket = io(SOCKET_ENDPOINT, {
+            transports: ["websocket", "polling"],
+            reconnectionAttempts: 5,
         });
         
-        return () => {
-            socket.disconnect();
-        };
-    }, []);
+        socketRef.current = socket;
+        socketInstance = socket; // for legacy access if any
 
-    useEffect(() => {
-        fetchChats();
-    }, []);
+        socket.on("connect", () => {
+            console.log("Socket connected successfully:", socket.id);
+            setSocketConnected(true);
+            socket.emit("setup", userInfo);
+        });
 
-    useEffect(() => {
-        if (selectedChat) {
-            fetchMessages();
-            selectedChatCompare = selectedChat;
-        }
-    }, [selectedChat]);
+        socket.on("connect_error", (err) => {
+            console.error("Socket connection error:", err.message);
+            setSocketConnected(false);
+        });
 
-    useEffect(() => {
+        socket.on("online users", (users) => {
+            console.log("Online users updated:", users);
+            setOnlineUsers(users);
+        });
+
         const messageHandler = (newMessageRecieved) => {
-            if (!selectedChatCompare || selectedChatCompare._id !== newMessageRecieved.chat._id) {
+            console.log("Message received:", newMessageRecieved);
+            const currentChat = selectedChatCompareRef.current;
+            
+            if (!currentChat || currentChat._id !== newMessageRecieved.chat._id) {
                 // Give notification
                 const senderName = newMessageRecieved.sender?.name || "User";
                 toast.success(`New message from ${senderName}`);
@@ -117,11 +125,14 @@ const ChatPanel = () => {
         socket.on("call ended", callEndedHandler);
 
         return () => {
+            console.log("Cleaning up socket connection");
             socket.off("message recieved", messageHandler);
             socket.off("call user", incomingCallHandler);
             socket.off("call accepted", callAcceptedHandler);
             socket.off("call declined", callDeclinedHandler);
             socket.off("call ended", callEndedHandler);
+            socket.disconnect();
+            socketRef.current = null;
         };
     }, []);
 
@@ -131,12 +142,16 @@ const ChatPanel = () => {
     };
 
     const handleDeclineCall = () => {
-        socket.emit("decline call", { to: activeCall.peerId });
+        if (socketRef.current) {
+            socketRef.current.emit("decline call", { to: activeCall.peerId });
+        }
         setActiveCall(null);
     };
 
     const handleEndCall = () => {
-        socket.emit("end call", { to: activeCall.peerId });
+        if (socketRef.current) {
+            socketRef.current.emit("end call", { to: activeCall.peerId });
+        }
         setActiveCall(null);
     };
 
@@ -153,13 +168,26 @@ const ChatPanel = () => {
         }
     };
 
+    useEffect(() => {
+        fetchChats();
+    }, []);
+
+    useEffect(() => {
+        if (selectedChat) {
+            fetchMessages();
+            selectedChatCompareRef.current = selectedChat;
+        }
+    }, [selectedChat]);
+
     const fetchMessages = async () => {
         if (!selectedChat) return;
         try {
             setLoading(true);
             const { data } = await api.get(`/message/${selectedChat._id}`);
             setMessages(data);
-            socket.emit("join chat", selectedChat._id);
+            if (socketRef.current) {
+                socketRef.current.emit("join chat", selectedChat._id);
+            }
         } catch (error) {
             toast.error("Failed to load messages");
         } finally {
@@ -240,7 +268,9 @@ const ChatPanel = () => {
                         content: messageToSend,
                         chatId: selectedChat._id
                     });
-                    socket.emit("new message", data);
+                    if (socketRef.current) {
+                        socketRef.current.emit("new message", data);
+                    }
                     setMessages([...messages, data]);
                     setShowEmojiPicker(false); // Close picker on send
                 } catch (error) {

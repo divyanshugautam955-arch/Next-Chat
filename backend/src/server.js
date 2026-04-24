@@ -18,7 +18,22 @@ dotenv.config();
 connectDB();
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (process.env.CLIENT_ORIGIN && origin === process.env.CLIENT_ORIGIN) {
+      return callback(null, true);
+    }
+    // In development, allow everything
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use(fileUpload({ useTempFiles: true }));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
@@ -48,11 +63,12 @@ const server = app.listen(
 const io = require("socket.io")(server, {
   pingTimeout: 60000,
   cors: {
-    origin: process.env.CLIENT_ORIGIN || true, // allow LAN/dev origins
+    origin: (origin, callback) => callback(null, true), // allow all origins for socket
+    credentials: true,
   },
 });
 
-const onlineUsers = new Set();
+const onlineUsers = new Map(); // Use Map to track userId -> socketCount
 
 io.on("connection", (socket) => {
   console.log("Connected to socket.io");
@@ -60,9 +76,13 @@ io.on("connection", (socket) => {
   socket.on("setup", (userData) => {
     socket.userId = userData._id;
     socket.join(userData._id);
-    onlineUsers.add(userData._id);
+    
+    // Increment socket count for this user
+    const count = onlineUsers.get(userData._id) || 0;
+    onlineUsers.set(userData._id, count + 1);
+    
     socket.emit("connected");
-    io.emit("online users", Array.from(onlineUsers));
+    io.emit("online users", Array.from(onlineUsers.keys()));
   });
 
   socket.on("join chat", (room) => {
@@ -84,14 +104,15 @@ io.on("connection", (socket) => {
     if (!chat.users) return console.log("chat.users not defined");
 
     chat.users.forEach((user) => {
-      if (user._id == newMessageRecieved.sender._id) return;
-
+      // We no longer skip the sender here, so that if the user is logged in 
+      // on multiple devices, the other devices get the message too.
+      // Socket.io will automatically skip the sender's *current* socket.
       socket.in(user._id).emit("message recieved", newMessageRecieved);
     });
   });
 
   // --- Calling Signaling Engine ---
-  
+
   // Initiating call
   socket.on("call user", (data) => {
     console.log(`Calling ${data.userToCall} from ${data.from}`);
@@ -139,8 +160,14 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     if (socket.userId) {
-      onlineUsers.delete(socket.userId);
-      io.emit("online users", Array.from(onlineUsers));
+      // Decrement socket count for this user
+      const count = onlineUsers.get(socket.userId) || 0;
+      if (count <= 1) {
+        onlineUsers.delete(socket.userId);
+      } else {
+        onlineUsers.set(socket.userId, count - 1);
+      }
+      io.emit("online users", Array.from(onlineUsers.keys()));
     }
     console.log("USER DISCONNECTED");
   });

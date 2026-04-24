@@ -22,14 +22,32 @@ const UserDashboard = () => {
     const [chats, setChats] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState([]);
 
+    const socketRef = useRef(null);
+
     useEffect(() => {
         if (!userInfo?._id) return;
-        const socket = io(SOCKET_ENDPOINT);
-        socket.emit("setup", userInfo);
+        
+        console.log("Dashboard initializing socket...");
+        const socket = io(SOCKET_ENDPOINT, {
+            transports: ["websocket", "polling"],
+        });
+        socketRef.current = socket;
+
+        socket.on("connect", () => {
+            console.log("Dashboard socket connected:", socket.id);
+            socket.emit("setup", userInfo);
+        });
+
         socket.on("online users", (users) => {
+            console.log("Dashboard online users received:", users);
             setOnlineUsers(users);
         });
-        return () => socket.disconnect();
+
+        return () => {
+            console.log("Dashboard cleaning up socket");
+            socket.disconnect();
+            socketRef.current = null;
+        };
     }, []);
 
     const fetchStats = async () => {

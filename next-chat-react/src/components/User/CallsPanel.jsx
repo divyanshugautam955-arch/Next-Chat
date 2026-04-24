@@ -29,11 +29,23 @@ const CallsPanel = () => {
         }
     };
 
+    const socketRef = useRef(null);
+
     useEffect(() => {
         fetchCalls();
 
-        socket = io(ENDPOINT);
-        socket.emit("setup", userInfo);
+        if (!userInfo?._id) return;
+
+        console.log("CallsPanel initializing socket...");
+        const socket = io(ENDPOINT, {
+            transports: ["websocket", "polling"],
+        });
+        socketRef.current = socket;
+        
+        socket.on("connect", () => {
+            console.log("CallsPanel socket connected:", socket.id);
+            socket.emit("setup", userInfo);
+        });
 
         socket.on("call user", (data) => {
              setActiveCall({
@@ -61,11 +73,13 @@ const CallsPanel = () => {
         });
 
         return () => {
+            console.log("CallsPanel cleaning up socket");
             socket.off("call user");
             socket.off("call accepted");
             socket.off("call declined");
             socket.off("call ended");
             socket.disconnect();
+            socketRef.current = null;
         };
     }, []);
 
@@ -75,12 +89,16 @@ const CallsPanel = () => {
     };
 
     const handleDeclineCall = () => {
-        socket.emit("decline call", { to: activeCall.peerId });
+        if (socketRef.current) {
+            socketRef.current.emit("decline call", { to: activeCall.peerId });
+        }
         setActiveCall(null);
     };
 
     const handleEndCall = () => {
-        socket.emit("end call", { to: activeCall.peerId });
+        if (socketRef.current) {
+            socketRef.current.emit("end call", { to: activeCall.peerId });
+        }
         setActiveCall(null);
     };
 
