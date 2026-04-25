@@ -6,7 +6,7 @@ const User = require("../models/userModel");
 async function main() {
   const email = process.env.ADMIN_EMAIL || "admin@nexchat.com";
   const password = process.env.ADMIN_PASSWORD || "Admin@12345";
-  const name = process.env.ADMIN_NAME || "NexChat Admin";
+  const name = process.env.ADMIN_NAME || "Real Time Chat Application Admin";
 
   if (!process.env.MONGO_URI) {
     throw new Error("Missing MONGO_URI in environment");
