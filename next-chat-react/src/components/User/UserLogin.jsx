@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
+import { GoogleLogin } from '@react-oauth/google';
 
 const UserLogin = () => {
     const navigate = useNavigate();
@@ -53,6 +54,20 @@ const UserLogin = () => {
         }
     };
 
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setLoading(true);
+        try {
+            const { data } = await api.post('/user/google', { credential: credentialResponse.credential });
+            toast.success("Google Login Successful!");
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            navigate('/user');
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Google Login Failed");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="p-4 bg-light" style={{ minHeight: 'calc(100vh - 105px)' }}>
             <div className="row g-4 justify-content-center">
@@ -71,6 +86,15 @@ const UserLogin = () => {
                         <button className="submit-btn-nc mb-3" onClick={handleLogin} disabled={loading}>
                             {loading ? "Signing In..." : "Sign In"}
                         </button>
+                        
+                        <div className="d-flex justify-content-center mb-3">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={() => {
+                                    toast.error('Google Login Failed');
+                                }}
+                            />
+                        </div>
                         <p className="text-center small text-muted mb-0">
                             Prefer the main login?{' '}
                             <span style={{ color: 'var(--nc-blue)', cursor: 'pointer' }} onClick={() => navigate('/login')}>
@@ -102,6 +126,15 @@ const UserLogin = () => {
                         <button className="submit-btn-nc mb-3" onClick={handleRegister} disabled={loading}>
                             {loading ? "Creating..." : "Create Account"}
                         </button>
+                        
+                        <div className="d-flex justify-content-center mb-3">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={() => {
+                                    toast.error('Google Login Failed');
+                                }}
+                            />
+                        </div>
                         <p className="text-center small text-muted mb-0">Already have an account? Use the Sign In form.</p>
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 const generateToken = require("../config/generateToken");
 const User = require("../models/userModel");
+const { OAuth2Client } = require("google-auth-library");
 
 //@description     Get or Search all users
 //@route           GET /api/user?search=
@@ -116,4 +117,41 @@ const getUserStats = async (req, res) => {
   }
 };
 
-module.exports = { allUsers, registerUser, authUser, getUserStats };
+const googleAuth = async (req, res) => {
+  const { credential } = req.body;
+
+  try {
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    
+    const { name, email, picture } = ticket.getPayload();
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        pic: picture,
+      });
+    }
+
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      pic: user.pic,
+      token: generateToken(user._id),
+    });
+
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    res.status(401).json({ message: "Invalid Google Token" });
+  }
+};
+
+module.exports = { allUsers, registerUser, authUser, getUserStats, googleAuth };

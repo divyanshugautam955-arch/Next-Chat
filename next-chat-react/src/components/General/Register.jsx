@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -23,6 +24,20 @@ const Register = () => {
             navigate('/user/dashboard');
         } catch (error) {
             toast.error(error.response?.data?.message || "Registration Failed");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setLoading(true);
+        try {
+            const { data } = await api.post('/user/google', { credential: credentialResponse.credential });
+            toast.success("Google Login Successful!");
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            navigate('/user/dashboard');
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Google Login Failed");
         } finally {
             setLoading(false);
         }
@@ -55,6 +70,15 @@ const Register = () => {
                         <button className="submit-btn-nc mb-3" onClick={handleRegister} disabled={loading}>
                             {loading ? "Registering..." : "Create Free Account"}
                         </button>
+                        
+                        <div className="d-flex justify-content-center mb-3">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={() => {
+                                    toast.error('Google Login Failed');
+                                }}
+                            />
+                        </div>
                         <p className="text-center small text-muted mb-0">Already have an account? <span style={{ color: 'var(--nc-blue)', cursor: 'pointer', fontWeight: 500 }} onClick={() => navigate('/login')}>Sign in →</span></p>
                     </div>
                 </div>

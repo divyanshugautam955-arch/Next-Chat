@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -26,6 +27,24 @@ const Login = () => {
             }
         } catch (error) {
             toast.error(error.response?.data?.message || "Invalid Email or Password");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setLoading(true);
+        try {
+            const { data } = await api.post('/user/google', { credential: credentialResponse.credential });
+            toast.success("Google Login Successful!");
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            if (data.isAdmin) {
+                navigate('/admin');
+            } else {
+                navigate('/user/dashboard');
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Google Login Failed");
         } finally {
             setLoading(false);
         }
@@ -56,6 +75,15 @@ const Login = () => {
                         <button className="submit-btn-nc mb-3" onClick={handleLogin} disabled={loading}>
                             {loading ? "Signing In..." : "Sign In to Real Time Chat Application"}
                         </button>
+                        
+                        <div className="d-flex justify-content-center mb-3">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={() => {
+                                    toast.error('Google Login Failed');
+                                }}
+                            />
+                        </div>
                         <p className="text-center small text-muted mb-0">Don't have an account? <span style={{ color: 'var(--nc-blue)', cursor: 'pointer', fontWeight: 500 }} onClick={() => navigate('/register')}>Create one free →</span></p>
                     </div>
                 </div>
