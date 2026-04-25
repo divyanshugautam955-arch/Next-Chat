@@ -103,6 +103,21 @@ const GroupsPanel = () => {
         }
     };
 
+    const handleLeaveGroup = async (group) => {
+        if (!window.confirm(`Are you sure you want to leave "${group.chatName}"?`)) return;
+
+        try {
+            await api.put('/chat/groupremove', {
+                chatId: group._id,
+                userId: userInfo._id
+            });
+            toast.success("Left group successfully");
+            fetchGroups();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to leave group");
+        }
+    };
+
     const getAvatarColor = (name) => {
         const colors = ['purple', 'blue', 'orange', 'pink'];
         const charCode = (name?.[0]?.toUpperCase()?.charCodeAt(0) || 0) % colors.length;
@@ -225,12 +240,20 @@ const GroupsPanel = () => {
                                         </td>
                                         <td><span className="small">{group.groupAdmin?.name || "N/A"}</span></td>
                                         <td>
-                                            <button 
-                                                className="act-btn act-btn-blue btn-sm" 
-                                                onClick={() => navigate('/user', { state: { selectedChat: group } })}
-                                            >
-                                                Open Channel
-                                            </button>
+                                            <div className="d-flex gap-2">
+                                                <button 
+                                                    className="act-btn act-btn-blue btn-sm" 
+                                                    onClick={() => navigate('/user', { state: { selectedChat: group } })}
+                                                >
+                                                    Open
+                                                </button>
+                                                <button 
+                                                    className="act-btn act-btn-red btn-sm" 
+                                                    onClick={() => handleLeaveGroup(group)}
+                                                >
+                                                    Leave
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

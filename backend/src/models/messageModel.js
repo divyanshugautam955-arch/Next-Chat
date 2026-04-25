@@ -7,6 +7,8 @@ const messageSchema = mongoose.Schema(
     attachment: { type: String }, // For media/file sharing
     chat: { type: mongoose.Schema.Types.ObjectId, ref: "Chat" },
     readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    deletedFor: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    isDeletedForEveryone: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

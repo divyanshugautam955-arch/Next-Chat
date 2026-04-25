@@ -7,7 +7,10 @@ const Chat = require("../models/chatModel");
 //@access          Protected
 const allMessages = async (req, res) => {
   try {
-    const messages = await Message.find({ chat: req.params.chatId })
+    const messages = await Message.find({ 
+      chat: req.params.chatId,
+      deletedFor: { $ne: req.user._id }
+    })
       .populate("sender", "name pic email")
       .populate("chat");
     res.json(messages);
@@ -54,4 +57,48 @@ const sendMessage = async (req, res) => {
   }
 };
 
-module.exports = { allMessages, sendMessage };
+const deleteMessage = async (req, res) => {
+  try {
+    const message = await Message.findById(req.params.messageId);
+    
+    if (!message) {
+      res.status(404);
+      throw new Error("Message Not Found");
+    }
+
+    if (message.sender.toString() !== req.user._id.toString()) {
+      res.status(401);
+      throw new Error("You can only delete your own messages for everyone");
+    }
+
+    message.content = "This message was deleted";
+    message.attachment = null;
+    message.isDeletedForEveryone = true;
+    await message.save();
+
+    const fullMessage = await Message.findById(message._id)
+      .populate("sender", "name pic email")
+      .populate("chat");
+
+    res.json(fullMessage);
+  } catch (error) {
+    res.status(400);
+    throw new Error(error.message);
+  }
+};
+
+const deleteMessageForMe = async (req, res) => {
+  try {
+    const message = await Message.findByIdAndUpdate(
+      req.params.messageId,
+      { $addToSet: { deletedFor: req.user._id } },
+      { new: true }
+    );
+    res.json(message);
+  } catch (error) {
+    res.status(400);
+    throw new Error(error.message);
+  }
+};
+
+module.exports = { allMessages, sendMessage, deleteMessage, deleteMessageForMe };

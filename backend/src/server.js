@@ -111,6 +111,17 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("delete message", (deletedMessage) => {
+    const chat = deletedMessage.chat;
+    if (!chat || !chat.users) return;
+
+    chat.users.forEach((user) => {
+      // Broadcast to all users in the chat including other devices of the sender
+      const userId = user._id || user;
+      socket.in(userId).emit("message deleted", deletedMessage);
+    });
+  });
+
   // --- Calling Signaling Engine ---
 
   // Initiating call

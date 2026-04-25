@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -29,11 +30,21 @@ const ChatPanel = () => {
     const [uploading, setUploading] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [onlineUsers, setOnlineUsers] = useState([]);
+    const [showAllMedia, setShowAllMedia] = useState(false);
+    const [mutedChats, setMutedChats] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('mutedChats')) || [];
+        } catch (e) {
+            return [];
+        }
+    });
     
     const userInfo = JSON.parse(localStorage.getItem('userInfo')) || {};
     const safeUserName = userInfo?.name || "User";
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
+    const [contextMenu, setContextMenu] = useState(null);
+    const longPressTimer = useRef(null);
 
     const defaultConversations = [];
     const defaultMessages = [];
@@ -89,7 +100,13 @@ const ChatPanel = () => {
         const callDeclinedHandler = () => { setActiveCall(null); toast.error('Call declined'); };
         const callEndedHandler = () => { setActiveCall(null); toast('Call ended'); };
 
+        const deleteHandler = (e) => {
+            const deletedMsg = e.detail;
+            setMessages(prev => prev.map(m => m._id === deletedMsg._id ? deletedMsg : m));
+        };
+
         window.addEventListener("nc:message_received", messageHandler);
+        window.addEventListener("nc:message_deleted", deleteHandler);
         
         if (socket) {
             socket.on("call user", incomingCallHandler);
@@ -100,6 +117,7 @@ const ChatPanel = () => {
 
         return () => {
             window.removeEventListener("nc:message_received", messageHandler);
+            window.removeEventListener("nc:message_deleted", deleteHandler);
             if (socket) {
                 socket.off("call user", incomingCallHandler);
                 socket.off("call accepted", callAcceptedHandler);
@@ -116,6 +134,7 @@ const ChatPanel = () => {
 
     const handleSelectChat = (chat) => {
         setSelectedChat(chat);
+        setShowAllMedia(false);
     };
 
     const handleDeclineCall = () => {
@@ -176,6 +195,31 @@ const ChatPanel = () => {
         if (!url) return false;
         const clean = url.split('?')[0].toLowerCase();
         return ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg'].some(ext => clean.endsWith(ext));
+    };
+
+    const isVideoUrl = (url) => {
+        if (!url) return false;
+        const clean = url.split('?')[0].toLowerCase();
+        return ['.mp4', '.webm', '.ogg'].some(ext => clean.endsWith(ext));
+    };
+
+    const isDocUrl = (url) => {
+        if (!url) return false;
+        const clean = url.split('?')[0].toLowerCase();
+        return ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv'].some(ext => clean.endsWith(ext));
+    };
+
+    const sharedMedia = useMemo(() => {
+        return messages
+            .filter(msg => msg.attachment && (isImageUrl(msg.attachment) || isVideoUrl(msg.attachment) || isDocUrl(msg.attachment)))
+            .reverse();
+    }, [messages]);
+
+    const getFileName = (url) => {
+        if (!url) return '';
+        const parts = url.split('/');
+        const lastPart = parts[parts.length - 1];
+        return lastPart.includes('_') ? lastPart.split('_').slice(1).join('_') : lastPart;
     };
 
     const toAbsoluteUrl = (url) => {
@@ -283,6 +327,90 @@ const ChatPanel = () => {
         } catch (error) {
             toast.error("Error creating chat");
         }
+    };
+
+    const handleLeaveGroup = async () => {
+        if (!selectedChat || !selectedChat.isGroupChat) return;
+        
+        if (!window.confirm(`Are you sure you want to leave "${selectedChat.chatName}"?`)) return;
+
+        try {
+            setLoading(true);
+            await api.put('/chat/groupremove', {
+                chatId: selectedChat._id,
+                userId: userInfo._id
+            });
+            toast.success("Left group successfully");
+            setSelectedChat(null);
+            fetchChats();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to leave group");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleContextMenu = (e, msg) => {
+        e.preventDefault();
+        setContextMenu({
+            x: e.pageX,
+            y: e.pageY,
+            message: msg
+        });
+    };
+
+    const handleTouchStart = (e, msg) => {
+        longPressTimer.current = setTimeout(() => {
+            handleContextMenu(e, msg);
+        }, 600);
+    };
+
+    const handleTouchEnd = () => {
+        clearTimeout(longPressTimer.current);
+    };
+
+    const handleDeleteForEveryone = async () => {
+        if (!contextMenu) return;
+        const msg = contextMenu.message;
+        try {
+            const { data } = await api.put(`/message/delete/${msg._id}`);
+            if (socket) {
+                socket.emit("delete message", data);
+            }
+            setMessages(prev => prev.map(m => m._id === data._id ? data : m));
+            setContextMenu(null);
+            toast.success("Message deleted for everyone");
+        } catch (error) {
+            toast.error("Failed to delete message");
+        }
+    };
+
+    const handleDeleteForMe = async () => {
+        if (!contextMenu) return;
+        const msg = contextMenu.message;
+        try {
+            await api.put(`/message/deleteforme/${msg._id}`);
+            setMessages(prev => prev.filter(m => m._id !== msg._id));
+            setContextMenu(null);
+            toast.success("Message deleted for you");
+        } catch (error) {
+            toast.error("Failed to delete message");
+        }
+    };
+
+    const toggleMute = () => {
+        if (!selectedChat) return;
+        const isMuted = mutedChats.includes(selectedChat._id);
+        let updatedMuted;
+        if (isMuted) {
+            updatedMuted = mutedChats.filter(id => id !== selectedChat._id);
+            toast.success("Notifications unmuted");
+        } else {
+            updatedMuted = [...mutedChats, selectedChat._id];
+            toast.success("Notifications muted");
+        }
+        setMutedChats(updatedMuted);
+        localStorage.setItem('mutedChats', JSON.stringify(updatedMuted));
     };
 
     const getChatName = (chat) => {
@@ -435,7 +563,6 @@ const ChatPanel = () => {
                                 <div className="d-flex gap-1">
                                     <button className="icon-btn" title="Voice Call" onClick={() => handleCall('audio')}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 2.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.16 6.16l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" /></svg></button>
                                     <button className="icon-btn" title="Video Call" onClick={() => handleCall('video')}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg></button>
-                                    <button className="icon-btn" title="Options"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" /></svg></button>
                                 </div>
                             </div>
                             <div className="chat-messages flex-grow-1 overflow-y-auto p-3">
@@ -447,34 +574,48 @@ const ChatPanel = () => {
                                     const isMine = msg.sender?._id === userInfo._id;
                                     const senderName = msg.sender?.name || "User";
                                     return (
-                                        <div key={idx} className={`msg-row ${isMine ? 'mine' : ''} d-flex align-items-end gap-2 mb-3 ${isMine ? 'justify-content-end' : ''}`}>
+                                        <div key={msg._id || idx} className={`msg-row ${isMine ? 'mine' : ''} d-flex align-items-end gap-2 mb-3 ${isMine ? 'justify-content-end' : ''}`}>
                                             {!isMine && (
                                                 <span className={`avatar sm ${getAvatarColor(senderName)}`}>{senderName.charAt(0).toUpperCase()}</span>
                                             )}
                                             <div className={isMine ? 'text-end' : ''} style={{maxWidth: '75%'}}>
-                                                <div className={`msg-bubble ${isMine ? 'mine' : 'theirs'}`}>
-                                                    {msg.content ? <div>{msg.content}</div> : null}
-                                                    {msg.attachment ? (
-                                                        isImageUrl(msg.attachment) ? (
-                                                            <a href={toAbsoluteUrl(msg.attachment)} target="_blank" rel="noreferrer">
-                                                                <img
-                                                                    src={toAbsoluteUrl(msg.attachment)}
-                                                                    alt="attachment"
-                                                                    style={{ maxWidth: '220px', borderRadius: '10px', marginTop: msg.content ? '8px' : 0 }}
-                                                                />
-                                                            </a>
-                                                        ) : (
-                                                            <a
-                                                                href={toAbsoluteUrl(msg.attachment)}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                                className="small"
-                                                                style={{ display: 'inline-block', marginTop: msg.content ? '8px' : 0, color: isMine ? 'rgba(255,255,255,.9)' : 'var(--nc-blue)' }}
-                                                            >
-                                                                Download attachment →
-                                                            </a>
-                                                        )
-                                                    ) : null}
+                                                <div 
+                                                    className={`msg-bubble ${isMine ? 'mine' : 'theirs'} ${msg.isDeletedForEveryone ? 'deleted' : ''}`}
+                                                    onContextMenu={(e) => !msg.isDeletedForEveryone && handleContextMenu(e, msg)}
+                                                    onTouchStart={(e) => !msg.isDeletedForEveryone && handleTouchStart(e, msg)}
+                                                    onTouchEnd={handleTouchEnd}
+                                                >
+                                                    {msg.isDeletedForEveryone ? (
+                                                        <div className="d-flex align-items-center gap-1 opacity-50 small italic">
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                                            This message was deleted
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            {msg.content ? <div>{msg.content}</div> : null}
+                                                            {msg.attachment ? (
+                                                                isImageUrl(msg.attachment) ? (
+                                                                    <a href={toAbsoluteUrl(msg.attachment)} target="_blank" rel="noreferrer">
+                                                                        <img
+                                                                            src={toAbsoluteUrl(msg.attachment)}
+                                                                            alt="attachment"
+                                                                            style={{ maxWidth: '220px', borderRadius: '10px', marginTop: msg.content ? '8px' : 0 }}
+                                                                        />
+                                                                    </a>
+                                                                ) : (
+                                                                    <a
+                                                                        href={toAbsoluteUrl(msg.attachment)}
+                                                                        target="_blank"
+                                                                        rel="noreferrer"
+                                                                        className="small"
+                                                                        style={{ display: 'inline-block', marginTop: msg.content ? '8px' : 0, color: isMine ? 'rgba(255,255,255,.9)' : 'var(--nc-blue)' }}
+                                                                    >
+                                                                        Download attachment →
+                                                                    </a>
+                                                                )
+                                                            ) : null}
+                                                        </>
+                                                    )}
                                                 </div>
                                                 <div className={`msg-meta ${isMine ? 'mine' : ''}`}>
                                                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -488,11 +629,8 @@ const ChatPanel = () => {
                                 })}
                                 <div ref={messagesEndRef} />
                             </div>
-                            {showEmojiPicker && (
-                                <div style={{ position: 'absolute', bottom: '70px', right: '80px', zIndex: 1000 }}>
-                                    <EmojiPicker onEmojiClick={onEmojiClick} />
-                                </div>
-                            )}
+
+
                             <div className="chat-input-bar d-flex align-items-center gap-2">
                                 <input
                                     ref={fileInputRef}
@@ -503,7 +641,7 @@ const ChatPanel = () => {
                                 <button className="attach-btn" title={uploading ? "Uploading..." : "Attach file"} onClick={handlePickFile} disabled={uploading}>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
                                 </button>
-                                <div className="chat-input-wrap d-flex align-items-center gap-2 flex-grow-1">
+                                <div className="chat-input-wrap d-flex align-items-center gap-2 flex-grow-1 position-relative">
                                     <input 
                                         type="text" 
                                         placeholder="Type something here…" 
@@ -512,6 +650,11 @@ const ChatPanel = () => {
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         onKeyDown={sendMessage}
                                     />
+                                    {showEmojiPicker && (
+                                        <div className="emoji-picker-container shadow-lg border rounded" style={{ position: 'absolute', bottom: '100%', right: '0', marginBottom: '10px', zIndex: 1000 }}>
+                                            <EmojiPicker onEmojiClick={onEmojiClick} height={350} width={300} />
+                                        </div>
+                                    )}
                                     <button className="icon-btn opacity-50" onClick={() => setShowEmojiPicker(prev => !prev)}>
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></svg>
                                     </button>
@@ -522,13 +665,37 @@ const ChatPanel = () => {
                             </div>
                         </>
                     ) : (
-                        <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted glass-effect">
+                        <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
                             <div className="welcome-circle mb-3"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--nc-primary)" strokeWidth="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg></div>
                             <h4 className="text-dark fw-bold mb-1">Real Time Chat Application Messages</h4>
                             <p className="small px-4 text-center">Select a contact or search for a new user to start messaging securely.</p>
                         </div>
                     )}
                 </div>
+
+                {contextMenu && createPortal(
+                    <div 
+                        className="position-fixed z-3 shadow-lg bg-white border rounded py-1"
+                        style={{ top: contextMenu.y, left: contextMenu.x, minWidth: '160px' }}
+                        onMouseLeave={() => setContextMenu(null)}
+                    >
+                        {contextMenu.message.sender?._id === userInfo._id && (
+                            <div className="px-3 py-2 cursor-pointer hover-effect text-danger d-flex align-items-center gap-2" onClick={handleDeleteForEveryone}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                <span className="small fw-medium">Delete for Everyone</span>
+                            </div>
+                        )}
+                        <div className="px-3 py-2 cursor-pointer hover-effect d-flex align-items-center gap-2" onClick={handleDeleteForMe}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            <span className="small fw-medium">Delete for Me</span>
+                        </div>
+                        <div className="px-3 py-2 cursor-pointer hover-effect border-top text-muted d-flex align-items-center gap-2" onClick={() => setContextMenu(null)}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <span className="small fw-medium">Close</span>
+                        </div>
+                    </div>,
+                    document.body
+                )}
 
                 {/* Chat Info Panel */}
                 {selectedChat && (
@@ -550,13 +717,97 @@ const ChatPanel = () => {
                         </div>
 
                         <div className="info-section">
-                            <div className="info-section-title">Shared Media <span className="ms-auto small link-primary cursor-pointer">See all</span></div>
-                            <div className="d-flex gap-2 mb-3">
-                                <div className="media-placeholder rounded bg-light flex-grow-1" style={{height: '50px'}}></div>
-                                <div className="media-placeholder rounded bg-light flex-grow-1" style={{height: '50px'}}></div>
-                                <div className="media-placeholder rounded bg-light flex-grow-1" style={{height: '50px'}}></div>
+                            <div className="info-section-title">
+                                Shared Media 
+                                {sharedMedia.length > 0 && (
+                                    <span 
+                                        className="ms-auto small link-primary cursor-pointer"
+                                        onClick={() => setShowAllMedia(true)}
+                                    >
+                                        See all
+                                    </span>
+                                )}
+                            </div>
+                            <div className="media-grid mb-3">
+                                {sharedMedia.length > 0 ? (
+                                    sharedMedia.slice(0, 6).map((msg, i) => (
+                                        <div 
+                                            key={i} 
+                                            className="media-thumb cursor-pointer"
+                                            onClick={() => window.open(toAbsoluteUrl(msg.attachment), '_blank')}
+                                        >
+                                            {isImageUrl(msg.attachment) ? (
+                                                <img 
+                                                    src={toAbsoluteUrl(msg.attachment)} 
+                                                    alt="Shared media" 
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
+                                            ) : isVideoUrl(msg.attachment) ? (
+                                                <div className="media-thumb-inner bg-light text-primary">
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
+                                                </div>
+                                            ) : (
+                                                <div className="media-thumb-inner bg-light text-success">
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-muted small py-2" style={{ gridColumn: 'span 3' }}>No media shared yet</div>
+                                )}
                             </div>
                         </div>
+
+                        {/* Full Media Overlay */}
+                        {showAllMedia && createPortal(
+                            <div className="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column" style={{ zIndex: 9999, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)' }}>
+                                <div className="p-3 border-bottom d-flex align-items-center justify-content-between bg-white">
+                                    <div>
+                                        <h6 className="mb-0 fw-bold">All Shared Media</h6>
+                                        <div className="small text-muted">{sharedMedia.length} items shared in this chat</div>
+                                    </div>
+                                    <button className="btn-close shadow-none" onClick={() => setShowAllMedia(false)}></button>
+                                </div>
+                                <div className="flex-grow-1 overflow-y-auto p-4">
+                                    <div className="media-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '20px' }}>
+                                        {sharedMedia.map((msg, i) => {
+                                            const isImg = isImageUrl(msg.attachment);
+                                            const isVid = isVideoUrl(msg.attachment);
+                                            return (
+                                                <div key={i} className="d-flex flex-column gap-2">
+                                                    <div 
+                                                        className="media-thumb cursor-pointer shadow-sm hover-effect"
+                                                        style={{ height: '140px', width: '100%', border: '1px solid var(--nc-gray-200)' }}
+                                                        onClick={() => window.open(toAbsoluteUrl(msg.attachment), '_blank')}
+                                                    >
+                                                        {isImg ? (
+                                                            <img 
+                                                                src={toAbsoluteUrl(msg.attachment)} 
+                                                                alt="Shared media" 
+                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                            />
+                                                        ) : isVid ? (
+                                                            <div className="media-thumb-inner bg-light text-primary">
+                                                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="media-thumb-inner bg-light text-success">
+                                                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="small text-center text-truncate px-1 text-muted" title={getFileName(msg.attachment)}>
+                                                        {getFileName(msg.attachment)}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>,
+                            document.body
+                        )}
 
                         <div className="info-section">
                             <div className="info-section-title">Participants</div>
@@ -587,12 +838,30 @@ const ChatPanel = () => {
                         <div className="info-section mt-auto pt-3">
                             <div className="info-section-title">Quick Actions</div>
                             <div className="d-grid gap-2">
-                                <button className="act-btn act-btn-gray text-start w-100 p-2 d-flex align-items-center gap-2">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 01-3.46 0" /></svg>
-                                    Mute notifications
+                                <button 
+                                    className={`act-btn ${mutedChats.includes(selectedChat._id) ? 'act-btn-blue' : 'act-btn-gray'} text-start w-100 p-2 d-flex align-items-center gap-2`}
+                                    onClick={toggleMute}
+                                >
+                                    {mutedChats.includes(selectedChat._id) ? (
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                                            <line x1="23" y1="9" x2="17" y2="15" />
+                                            <line x1="17" y1="9" x2="23" y2="15" />
+                                        </svg>
+                                    ) : (
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                            <path d="M13.73 21a2 2 0 01-3.46 0" />
+                                        </svg>
+                                    )}
+                                    {mutedChats.includes(selectedChat._id) ? 'Unmute notifications' : 'Mute notifications'}
                                 </button>
                                 {selectedChat.isGroupChat && (
-                                    <button className="act-btn act-btn-red text-start w-100 p-2 d-flex align-items-center gap-2">
+                                    <button 
+                                        className="act-btn act-btn-red text-start w-100 p-2 d-flex align-items-center gap-2"
+                                        onClick={handleLeaveGroup}
+                                        disabled={loading}
+                                    >
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
                                         Leave Group
                                     </button>

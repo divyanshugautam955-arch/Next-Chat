@@ -33,39 +33,51 @@ export const SocketProvider = ({ children }) => {
         });
 
         const messageHandler = (newMessageRecieved) => {
-            // Check if we are currently looking at this chat
-            // This is tricky without knowing the selectedChat state globally,
-            // but we can emit a local event or check a shared ref.
-            // For now, let's just emit the notification if it's from someone else.
-            
             const senderName = newMessageRecieved.sender?.name || "User";
             
-            // We'll dispatch a custom event so the ChatPanel can handle it if it's open
+            // Dispatch event for ChatPanel to update message list
             window.dispatchEvent(new CustomEvent("nc:message_received", { detail: newMessageRecieved }));
             
-            // If the message is not from ourselves, show a notification
+            // Notification logic
             if (newMessageRecieved.sender?._id !== userInfo._id) {
-                toast.success(`New message from ${senderName}`);
-                pushNotification({
-                    id: `${newMessageRecieved._id || Date.now()}`,
-                    type: "message",
-                    text: `${senderName}: ${newMessageRecieved.content || 'Sent an attachment'}`,
-                    createdAt: newMessageRecieved.createdAt || new Date().toISOString(),
-                    read: false,
-                    initials: senderName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
-                    color: "purple",
-                    chatId: newMessageRecieved.chat?._id,
-                });
+                // Check if chat is muted
+                let isMuted = false;
+                try {
+                    const mutedChats = JSON.parse(localStorage.getItem('mutedChats')) || [];
+                    isMuted = mutedChats.includes(newMessageRecieved.chat?._id);
+                } catch (e) {
+                    console.error("Error reading mutedChats", e);
+                }
+
+                if (!isMuted) {
+                    toast.success(`New message from ${senderName}`);
+                    pushNotification({
+                        id: `${newMessageRecieved._id || Date.now()}`,
+                        type: "message",
+                        text: `${senderName}: ${newMessageRecieved.content || 'Sent an attachment'}`,
+                        createdAt: newMessageRecieved.createdAt || new Date().toISOString(),
+                        read: false,
+                        initials: senderName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+                        color: "purple",
+                        chatId: newMessageRecieved.chat?._id,
+                    });
+                }
             }
         };
 
+        const deleteHandler = (deletedMessage) => {
+            window.dispatchEvent(new CustomEvent("nc:message_deleted", { detail: deletedMessage }));
+        };
+
         newSocket.on("message recieved", messageHandler);
+        newSocket.on("message deleted", deleteHandler);
 
         setSocket(newSocket);
 
         return () => {
             console.log("Global Socket disconnecting");
             newSocket.off("message recieved", messageHandler);
+            newSocket.off("message deleted", deleteHandler);
             newSocket.disconnect();
         };
     }, [userInfo?._id]);

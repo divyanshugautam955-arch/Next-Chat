@@ -92,12 +92,6 @@ const SharedHeader = ({ title, sub, type, onToggleNotif, onCloseNotif, onClearNo
                             <div className="px-3 py-2 border-bottom mb-1">
                                 <div className="small fw-bold text-dark">Account Settings</div>
                             </div>
-                            <div className="notif-item cursor-pointer hover-effect" style={{ border: 'none' }}>
-                                <div className="notif-text">View Profile</div>
-                            </div>
-                            <div className="notif-item cursor-pointer hover-effect" style={{ border: 'none' }}>
-                                <div className="notif-text">Settings</div>
-                            </div>
                             <div className="notif-item cursor-pointer hover-effect text-danger" style={{ border: 'none' }} onClick={handleLogout}>
                                 <div className="notif-text fw-bold">Sign Out</div>
                             </div>
