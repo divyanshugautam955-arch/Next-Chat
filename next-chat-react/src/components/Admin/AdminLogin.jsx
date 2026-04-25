@@ -36,7 +36,7 @@ const AdminLogin = () => {
             <div className="login-card">
                 <div className="d-flex align-items-center gap-2 mb-3">
                     <span className="logo-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="none" stroke="#fff" strokeWidth="2" /></svg></span>
-                    <span style={{ color: 'var(--nc-gray-900)', fontWeight: 600, fontSize: '15px' }}>NexChat Admin</span>
+                    <span style={{ color: 'var(--nc-gray-900)', fontWeight: 600, fontSize: '15px' }}>Real Time Chat Application Admin</span>
                 </div>
                 <h5 className="fw-bold mb-1">Admin Sign In</h5>
                 <p className="small text-muted mb-4">Restricted access — authorised personnel only</p>

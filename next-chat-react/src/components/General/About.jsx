@@ -5,9 +5,9 @@ const About = () => {
         <div id="gpage-about" className="g-page active">
             <div className="py-5 text-white text-center" style={{ background: '#1E3A5F' }}>
                 <div className="container">
-                    <span className="section-tag" style={{ background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.85)', border: 'none' }}>About NexChat</span>
+                    <span className="section-tag" style={{ background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.85)', border: 'none' }}>About Real Time Chat Application</span>
                     <h2 className="display-6 fw-bold mt-3 mb-3">Built for real conversations</h2>
-                    <p className="mx-auto" style={{ maxWidth: '520px', opacity: .7, fontSize: '15px', lineHeight: 1.7 }}>NexChat was built as a final year project to demonstrate a production-grade real-time communication system with admin controls, user management, and modern UI.</p>
+                    <p className="mx-auto" style={{ maxWidth: '520px', opacity: .7, fontSize: '15px', lineHeight: 1.7 }}>Real Time Chat Application was built as a final year project to demonstrate a production-grade real-time communication system with admin controls, user management, and modern UI.</p>
                 </div>
             </div>
             <div className="container py-5">
@@ -18,7 +18,7 @@ const About = () => {
                     </div>
                     <div className="col-md-6">
                         <h6 className="fw-bold mb-2">The Technology</h6>
-                        <p className="text-muted" style={{ fontSize: '14px', lineHeight: 1.8 }}>NexChat is built with modern web technologies — real-time WebSocket messaging, end-to-end encryption, REST APIs, responsive frontend design, and a robust admin panel.</p>
+                        <p className="text-muted" style={{ fontSize: '14px', lineHeight: 1.8 }}>Real Time Chat Application is built with modern web technologies — real-time WebSocket messaging, end-to-end encryption, REST APIs, responsive frontend design, and a robust admin panel.</p>
                     </div>
                 </div>
                 <div className="p-4 mb-4 rounded-3" style={{ background: 'var(--nc-blue-50)', border: '1px solid var(--nc-blue-100)' }}>

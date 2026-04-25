@@ -11,7 +11,7 @@ const Footer = () => {
                     <div className="col-md-4">
                         <div className="d-flex align-items-center gap-2 mb-3">
                             <span className="logo-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="none" stroke="#fff" strokeWidth="2" /></svg></span>
-                            <span className="fw-bold" style={{ color: '#fff', fontSize: '16px' }}>NexChat</span>
+                            <span className="fw-bold" style={{ color: '#fff', fontSize: '16px' }}>Real Time Chat Application</span>
                         </div>
                         <p style={{ color: 'rgba(255,255,255,.45)', fontSize: '13px', lineHeight: 1.7 }}>A modern, secure real-time chat system for teams and communities of all sizes.</p>
                     </div>
@@ -38,7 +38,7 @@ const Footer = () => {
                 </div>
                 <hr style={{ borderColor: 'rgba(255,255,255,.1)', marginTop: '32px' }} />
                 <div className="d-flex justify-content-between align-items-center">
-                    <span className="footer-copy">© 2026 NexChat. All rights reserved.</span>
+                    <span className="footer-copy">© 2026 Real Time Chat Application. All rights reserved.</span>
                     <div>
                         <span className="social-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" /></svg></span>
                         <span className="social-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></svg></span>

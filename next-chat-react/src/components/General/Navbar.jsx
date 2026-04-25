@@ -13,7 +13,7 @@ const Navbar = () => {
         <span className="logo-icon">
           <svg viewBox="0 0 24 24" width="18" height="18"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="none" stroke="#fff" strokeWidth="2"/></svg>
         </span>
-        <span style={{ fontSize: '17px', fontWeight: 700, color: '#111827' }}>NexChat</span>
+        <span style={{ fontSize: '17px', fontWeight: 700, color: '#111827' }}>Real Time Chat Application</span>
       </a>
       <div className="d-none d-md-flex align-items-center gap-1">
         <span className={`g-nav-link ${isActive('/')}`} onClick={() => navigate('/')}>Home</span>

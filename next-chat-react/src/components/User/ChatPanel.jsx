@@ -524,7 +524,7 @@ const ChatPanel = () => {
                     ) : (
                         <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted glass-effect">
                             <div className="welcome-circle mb-3"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--nc-primary)" strokeWidth="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg></div>
-                            <h4 className="text-dark fw-bold mb-1">NexChat Messages</h4>
+                            <h4 className="text-dark fw-bold mb-1">Real Time Chat Application Messages</h4>
                             <p className="small px-4 text-center">Select a contact or search for a new user to start messaging securely.</p>
                         </div>
                     )}

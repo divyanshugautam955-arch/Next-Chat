@@ -18,7 +18,7 @@ const AdminSidebar = ({ className = "" }) => {
         <div className={`nc-sidebar ${className}`}>
             <div className="sidebar-logo d-flex align-items-center gap-2">
                 <span className="logo-icon"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="none" stroke="#fff" strokeWidth="2" /></svg></span>
-                <span className="logo-name" style={{ color: '#fff', fontWeight: 600, fontSize: '15px' }}>NexChat</span>
+                <span className="logo-name" style={{ color: '#fff', fontWeight: 600, fontSize: '15px' }}>Real Time Chat Application</span>
                 <span style={{ background: 'rgba(255,255,255,.15)', color: 'rgba(255,255,255,.7)', fontSize: '10px', padding: '2px 7px', borderRadius: '20px' }}>Admin</span>
             </div>
             <div className="sidebar-section">Overview</div>

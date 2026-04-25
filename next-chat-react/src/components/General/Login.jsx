@@ -41,7 +41,7 @@ const Login = () => {
                                 <svg viewBox="0 0 24 24" width="22" height="22"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="none" stroke="#fff" strokeWidth="2" /></svg>
                             </span>
                             <h5 className="fw-bold mb-1">Welcome back</h5>
-                            <p className="text-muted small mb-0">Sign in to your NexChat account</p>
+                            <p className="text-muted small mb-0">Sign in to your Real Time Chat Application account</p>
                         </div>
                         <div className="mb-3">
                             <label className="form-label-nc">Email Address</label>
@@ -54,7 +54,7 @@ const Login = () => {
                             <input type="password" className="form-input-nc" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
                         </div>
                         <button className="submit-btn-nc mb-3" onClick={handleLogin} disabled={loading}>
-                            {loading ? "Signing In..." : "Sign In to NexChat"}
+                            {loading ? "Signing In..." : "Sign In to Real Time Chat Application"}
                         </button>
                         <p className="text-center small text-muted mb-0">Don't have an account? <span style={{ color: 'var(--nc-blue)', cursor: 'pointer', fontWeight: 500 }} onClick={() => navigate('/register')}>Create one free →</span></p>
                     </div>

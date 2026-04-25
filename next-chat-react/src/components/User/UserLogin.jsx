@@ -82,7 +82,7 @@ const UserLogin = () => {
                 <div className="col-md-5">
                     <div className="login-card w-100" style={{ maxWidth: '100%' }}>
                         <h5 className="fw-bold mb-1">Create Account</h5>
-                        <p className="small text-muted mb-4">Join NexChat for free</p>
+                        <p className="small text-muted mb-4">Join Real Time Chat Application for free</p>
                         <div className="mb-2">
                             <label className="form-label-nc">Full Name</label>
                             <input type="text" className="form-input-nc" placeholder="Jane Doe" value={name} onChange={(e) => setName(e.target.value)} />

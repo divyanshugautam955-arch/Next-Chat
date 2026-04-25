@@ -20,7 +20,7 @@ const Home = () => {
                                 <span className="g-hero-badge-dot"></span> Now with HD video calling
                             </div>
                             <h1>Chat smarter.<br />Work <span>together.</span></h1>
-                            <p className="g-hero-sub">NexChat brings your team's conversations, files, and calls into one clean, fast, secure workspace — available anywhere.</p>
+                            <p className="g-hero-sub">Real Time Chat Application brings your team's conversations, files, and calls into one clean, fast, secure workspace — available anywhere.</p>
                             <div className="d-flex gap-3 flex-wrap mb-4">
                                 <button className="cta-primary" onClick={() => navigate('/register')}>Start for free</button>
                                 <button className="cta-secondary">
@@ -44,7 +44,7 @@ const Home = () => {
                                     <span className="mock-dot" style={{ background: '#FF5F57' }}></span>
                                     <span className="mock-dot" style={{ background: '#FFBD2E' }}></span>
                                     <span className="mock-dot" style={{ background: '#28CA41' }}></span>
-                                    NexChat — Project Alpha
+                                    Real Time Chat Application — Project Alpha
                                 </div>
                                 <div className="mock-chat p-3">
                                     <div className="mock-msg d-flex align-items-end gap-2 mb-2">
@@ -96,7 +96,7 @@ const Home = () => {
                     <div className="text-center mb-5">
                         <span className="section-tag">Features</span>
                         <div className="section-title">Everything your team needs</div>
-                        <p className="section-sub mx-auto" style={{ maxWidth: '520px' }}>From quick DMs to full-scale video conferences — NexChat has every communication tool built in.</p>
+                        <p className="section-sub mx-auto" style={{ maxWidth: '520px' }}>From quick DMs to full-scale video conferences — Real Time Chat Application has every communication tool built in.</p>
                     </div>
                     <div className="row g-4">
                         {[
@@ -154,11 +154,11 @@ const Home = () => {
                     <div className="text-center mb-5">
                         <span className="section-tag">Testimonials</span>
                         <div className="section-title">Loved by teams everywhere</div>
-                        <p className="section-sub">Here's what our users say about NexChat.</p>
+                        <p className="section-sub">Here's what our users say about Real Time Chat Application.</p>
                     </div>
                     <div className="row g-4">
                         {[
-                            { stars: "★★★★★", quote: "\"NexChat replaced our three separate tools overnight. The interface is clean, fast, and our whole team actually uses it.\"", name: "Sarah R.", role: "Engineering Lead, Acme Co.", initial: "SR", color: "green" },
+                            { stars: "★★★★★", quote: "\"Real Time Chat Application replaced our three separate tools overnight. The interface is clean, fast, and our whole team actually uses it.\"", name: "Sarah R.", role: "Engineering Lead, Acme Co.", initial: "SR", color: "green" },
                             { stars: "★★★★★", quote: "\"The admin panel is a game changer. I can see everything happening across 200+ users and keep things running smoothly.\"", name: "Tom W.", role: "IT Manager, GlobalTech", initial: "TW", color: "purple" },
                             { stars: "★★★★★", quote: "\"Best final year project platform I've used. The UI is modern, the features are complete, and it's genuinely fun to use.\"", name: "Priya K.", role: "CS Student, IIT Delhi", initial: "PK", color: "amber" },
                         ].map((testi, idx) => (
@@ -185,9 +185,9 @@ const Home = () => {
                         <div className="section-title">Common questions</div>
                     </div>
                     {[
-                        { q: "Is NexChat free to use?", a: "Yes — NexChat is free to get started with core messaging and calling features included." },
-                        { q: "How secure is NexChat?", a: "All messages are end-to-end encrypted using AES-256. We do not access your message content, and all data is stored on servers with SOC2 compliance." },
-                        { q: "Can I use NexChat on mobile?", a: "Yes! NexChat works in any modern browser and is fully responsive. Native Android and iOS apps are coming soon." },
+                        { q: "Is Real Time Chat Application free to use?", a: "Yes — Real Time Chat Application is free to get started with core messaging and calling features included." },
+                        { q: "How secure is Real Time Chat Application?", a: "All messages are end-to-end encrypted using AES-256. We do not access your message content, and all data is stored on servers with SOC2 compliance." },
+                        { q: "Can I use Real Time Chat Application on mobile?", a: "Yes! Real Time Chat Application works in any modern browser and is fully responsive. Native Android and iOS apps are coming soon." },
                         { q: "What is the Admin Zone?", a: "The Admin Zone is a dedicated dashboard for administrators to manage users, monitor chat sessions, moderate content, and view analytics — all in one place." },
                     ].map((item, idx) => (
                         <div className={`faq-item ${faqOpen === idx ? 'open' : ''}`} onClick={() => toggleFaq(idx)} key={idx}>
@@ -202,7 +202,7 @@ const Home = () => {
             <section className="cta-banner">
                 <div className="container">
                     <h2>Ready to transform<br />how your team communicates?</h2>
-                    <p>Join 12,000+ users already on NexChat. Sign up in seconds — it's completely free to start.</p>
+                    <p>Join 12,000+ users already on Real Time Chat Application. Sign up in seconds — it's completely free to start.</p>
                     <div>
                         <button className="banner-btn-primary" onClick={() => navigate('/register')}>Create free account</button>
                         <button className="banner-btn-ghost" onClick={() => navigate('/login')}>Sign in now</button>
