@@ -13,6 +13,7 @@ const fileUpload = require("express-fileupload");
 const uploadRoutes = require("./routes/uploadRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const callRoutes = require("./routes/callRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 
 dotenv.config();
 connectDB();
@@ -48,6 +49,7 @@ app.use("/api/message", messageRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/call", callRoutes);
+app.use("/api/contact", contactRoutes);
 
 // Error Handling middlewares
 app.use(notFound);

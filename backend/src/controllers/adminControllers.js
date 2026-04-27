@@ -1,6 +1,7 @@
 const User = require("../models/userModel");
 const Chat = require("../models/chatModel");
 const Message = require("../models/messageModel");
+const ContactMessage = require("../models/contactMessageModel");
 
 const getAdminStats = async (req, res) => {
     try {
@@ -72,4 +73,17 @@ const getAllChats = async (req, res) => {
     }
 };
 
-module.exports = { getAdminStats, getAllUsers, deleteUser, getAllChats, deleteChat };
+const getAllContactMessages = async (req, res) => {
+    try {
+        if (req.user?.email !== "admin@nexchat.com") {
+            return res.status(403).json({ message: "Only the primary admin can view contact messages" });
+        }
+
+        const contactMessages = await ContactMessage.find({}).sort({ createdAt: -1 });
+        res.json(contactMessages);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch contact messages" });
+    }
+};
+
+module.exports = { getAdminStats, getAllUsers, deleteUser, getAllChats, deleteChat, getAllContactMessages };

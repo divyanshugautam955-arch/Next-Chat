@@ -7,13 +7,13 @@ import Home from './components/General/Home';
 import About from './components/General/About';
 import Help from './components/General/Help';
 import Contact from './components/General/Contact';
-import Login from './components/General/Login';
 import Register from './components/General/Register';
 import AdminSidebar from './components/Admin/AdminSidebar';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import UserManagement from './components/Admin/UserManagement';
 import AdminRooms from './components/Admin/AdminRooms';
 import AdminGroups from './components/Admin/AdminGroups';
+import AdminContactMessages from './components/Admin/AdminContactMessages';
 import AdminLogin from './components/Admin/AdminLogin';
 import UserSidebar from './components/User/UserSidebar';
 import ChatPanel from './components/User/ChatPanel';
@@ -64,9 +64,11 @@ function App() {
     if (isAdminZone) {
       const titles = {
         '/admin': { title: 'Dashboard', sub: 'Welcome back, Super Admin' },
+        '/admin/dashboard': { title: 'Dashboard', sub: 'Welcome back, Super Admin' },
         '/admin/users': { title: 'User Management', sub: 'Manage system users' },
         '/admin/groups': { title: 'Groups', sub: 'Manage group chats' },
         '/admin/rooms': { title: 'Rooms', sub: 'Manage direct chats' },
+        '/admin/contact-messages': { title: 'Contact Messages', sub: 'Review contact form submissions' },
         '/admin/login': { title: 'Admin Sign In', sub: 'Authorised personnel only' }
       };
       return { ...(titles[location.pathname] || { title: 'Admin Panel', sub: 'Management' }), type: 'admin' };
@@ -119,14 +121,16 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/help" element={<Help />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<UserLogin isShared />} />
               <Route path="/register" element={<Register />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<ProtectedRoute isAdmin><AdminDashboard isShared /></ProtectedRoute>} />
+              <Route path="/admin/dashboard" element={<ProtectedRoute isAdmin><AdminDashboard isShared /></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute isAdmin><UserManagement isShared /></ProtectedRoute>} />
               <Route path="/admin/groups" element={<ProtectedRoute isAdmin><AdminGroups isShared /></ProtectedRoute>} />
               <Route path="/admin/rooms" element={<ProtectedRoute isAdmin><AdminRooms isShared /></ProtectedRoute>} />
+              <Route path="/admin/contact-messages" element={<ProtectedRoute isAdmin><AdminContactMessages isShared /></ProtectedRoute>} />
               <Route path="/admin/login" element={<AdminLogin isShared />} />
               <Route path="/adminlogin" element={<AdminLogin isShared />} />
 

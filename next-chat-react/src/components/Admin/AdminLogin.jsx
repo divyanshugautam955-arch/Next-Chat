@@ -51,6 +51,11 @@ const AdminLogin = () => {
                 <button className="submit-btn-nc mb-3" onClick={handleAdminLogin} disabled={loading}>
                     {loading ? "Authenticating..." : "Sign In to Admin Panel"}
                 </button>
+                <p className="text-center small mb-2">
+                    <span style={{ color: 'var(--nc-blue)', cursor: 'pointer', fontWeight: 500 }} onClick={() => navigate('/login')}>
+                        Sign in as a User
+                    </span>
+                </p>
                 <p className="text-center small text-muted mb-0">Forgot credentials? <span style={{ color: 'var(--nc-blue)', cursor: 'pointer' }}>Contact IT Support</span></p>
             </div>
         </div>
