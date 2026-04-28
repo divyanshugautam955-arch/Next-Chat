@@ -82,8 +82,8 @@ const Home = () => {
             <section className="stats-strip">
                 <div className="container">
                     <div className="row text-center g-4">
-                        <div className="col-6 col-md-3"><div className="stat-num">12K+</div><div className="stat-lbl">Active Users</div></div>
-                        <div className="col-6 col-md-3"><div className="stat-num">4.9M</div><div className="stat-lbl">Messages Sent</div></div>
+                        <div className="col-6 col-md-3"><div className="stat-num">20</div><div className="stat-lbl">Active Users</div></div>
+                        <div className="col-6 col-md-3"><div className="stat-num">20</div><div className="stat-lbl">Messages Sent</div></div>
                         <div className="col-6 col-md-3"><div className="stat-num">99.9%</div><div className="stat-lbl">Uptime SLA</div></div>
                         <div className="col-6 col-md-3"><div className="stat-num">&lt;100ms</div><div className="stat-lbl">Message Latency</div></div>
                     </div>
